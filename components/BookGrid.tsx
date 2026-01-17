@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { useInView } from "react-intersection-observer";
 import { Book } from "@/lib/openLibrary";
 import { BookCard } from "./BookCard";
-import { useInView } from "react-intersection-observer";
 
 interface BookGridProps {
   books: Book[];
@@ -21,16 +21,22 @@ export function BookGrid({
   hasNextPage,
   isFetchingNextPage,
 }: BookGridProps) {
-  //  Responsive columns
+  // ✅ Responsive columns based on screen size
   const [columns, setColumns] = useState(2);
 
   useEffect(() => {
     const updateColumns = () => {
       const width = window.innerWidth;
-      if (width >= 1280) setColumns(5);
-      else if (width >= 1024) setColumns(4);
-      else if (width >= 768) setColumns(3);
-      else setColumns(2);
+
+      if (width >= 1536)
+        setColumns(6); // 2xl
+      else if (width >= 1280)
+        setColumns(5); // xl
+      else if (width >= 1024)
+        setColumns(4); // lg
+      else if (width >= 768)
+        setColumns(3); // md
+      else setColumns(2); // sm
     };
 
     updateColumns();
@@ -38,7 +44,7 @@ export function BookGrid({
     return () => window.removeEventListener("resize", updateColumns);
   }, []);
 
-  //  Convert flat list -> rows
+  // ✅ Convert books list into "rows" (each row has N books)
   const rows = useMemo(() => {
     const result: Book[][] = [];
     for (let i = 0; i < books.length; i += columns) {
@@ -47,16 +53,16 @@ export function BookGrid({
     return result;
   }, [books, columns]);
 
-  //  Virtualize rows (window scrolling)
+  // ✅ Virtualize ROWS (window scroll)
   const rowVirtualizer = useWindowVirtualizer({
     count: rows.length,
-    estimateSize: () => 520, // just a starting guess
+    estimateSize: () => 520, // initial guess (real height will be measured)
     overscan: 6,
   });
 
-  //  Infinite scroll sentinel
+  // ✅ Infinite scroll sentinel
   const { ref: sentinelRef, inView } = useInView({
-    rootMargin: "600px",
+    rootMargin: "700px",
   });
 
   useEffect(() => {
@@ -65,14 +71,14 @@ export function BookGrid({
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  //  Loading state
+  // ✅ Loading skeleton
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
-        {Array.from({ length: 10 }).map((_, i) => (
+        {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
-            className="h-[420px] bg-muted/30 animate-pulse rounded-xl"
+            className="h-[420px] bg-muted/30 animate-pulse rounded-2xl"
           />
         ))}
       </div>
@@ -89,11 +95,12 @@ export function BookGrid({
 
   return (
     <div className="relative w-full">
+      {/* This creates the full scroll height */}
       <div
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
-          position: "relative",
           width: "100%",
+          position: "relative",
         }}
       >
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -102,7 +109,8 @@ export function BookGrid({
           return (
             <div
               key={virtualRow.key}
-              ref={rowVirtualizer.measureElement} 
+              ref={rowVirtualizer.measureElement}
+              data-index={virtualRow.index}
               style={{
                 position: "absolute",
                 top: 0,
@@ -110,10 +118,10 @@ export function BookGrid({
                 width: "100%",
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className="px-4 py-3"
+              className="px-4 py-4" // ✅ spacing between rows
             >
               <div
-                className="grid gap-4"
+                className="grid gap-4 w-full"
                 style={{
                   gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
                 }}
@@ -123,11 +131,11 @@ export function BookGrid({
                 ))}
               </div>
 
-              {/*  Put sentinel near the last rows */}
-              {virtualRow.index === rows.length - 1 ? (
+              {/* ✅ Sentinel near last row to load more */}
+              {virtualRow.index === rows.length - 1 && (
                 <div
                   ref={sentinelRef}
-                  className="h-16 w-full flex items-center justify-center mt-6"
+                  className="h-16 w-full flex justify-center items-center mt-6"
                 >
                   {isFetchingNextPage ? (
                     <span className="text-sm text-muted-foreground">
@@ -135,11 +143,11 @@ export function BookGrid({
                     </span>
                   ) : !hasNextPage ? (
                     <span className="text-sm text-muted-foreground">
-                      You reached the end 
+                      You reached the end ✅
                     </span>
                   ) : null}
                 </div>
-              ) : null}
+              )}
             </div>
           );
         })}

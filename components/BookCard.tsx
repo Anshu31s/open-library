@@ -2,6 +2,7 @@ import { Book, getCoverUrl } from "@/lib/openLibrary";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
+import { formatPublishYear } from "@/lib/date";
 
 interface BookCardProps {
   book: Book;
@@ -9,7 +10,6 @@ interface BookCardProps {
 
 export function BookCard({ book }: BookCardProps) {
   const coverUrl = book.cover_i ? getCoverUrl(book.cover_i, "L") : "";
-
   const subjects = book.subject?.slice(0, 3) || [];
 
   return (
@@ -41,7 +41,10 @@ export function BookCard({ book }: BookCardProps) {
           <p className="line-clamp-1">
             {book.author_name?.slice(0, 2).join(", ") || "Unknown Author"}
           </p>
-          <p className="text-xs mt-1">{book.first_publish_year || "N/A"}</p>
+
+          <p className="text-xs mt-1">
+            {formatPublishYear(book.first_publish_year)}
+          </p>
         </div>
       </CardContent>
 
