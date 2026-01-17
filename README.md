@@ -49,6 +49,6 @@ It uses the **OpenLibrary Search API** to fetch books with **infinite scrolling*
 Clone the repository and install dependencies:
 
 ```bash
-git clone <your-repo-url>
-cd <your-project-folder>
+git clone
+cd project-folder
 npm install
